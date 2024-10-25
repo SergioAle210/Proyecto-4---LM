@@ -1,16 +1,6 @@
 # El objetivo de este programa es simular un sistema de control difuso para un calentador de agua.
 # El sistema tiene dos entradas: la temperatura actual del agua y la temperatura deseada del agua.
 # La salida del sistema es el porcentaje de uso del calentador.
-# El sistema tiene las siguientes reglas:
-# 1. Si la temperatura actual es fría y la temperatura deseada es media, entonces el calentador debe estar a medio.
-# 2. Si la temperatura actual es fría y la temperatura deseada es baja, entonces el calentador debe estar bajo.
-# 3. Si la temperatura actual es fría y la temperatura deseada es alta, entonces el calentador debe estar alto.
-# 4. Si la temperatura actual es templada y la temperatura deseada es baja, entonces el calentador debe estar bajo.
-# 5. Si la temperatura actual es templada y la temperatura deseada es media, entonces el calentador debe estar medio.
-# 6. Si la temperatura actual es templada y la temperatura deseada es alta, entonces el calentador debe estar medio.
-# 7. Si la temperatura actual es caliente y la temperatura deseada es baja, entonces el calentador debe estar bajo.
-# 8. Si la temperatura actual es caliente y la temperatura deseada es media, entonces el calentador debe estar medio.
-# 9. Si la temperatura actual es caliente y la temperatura deseada es alta, entonces el calentador debe estar alto.
 
 # Importamos las bibliotecas necesarias
 import numpy as np
@@ -57,6 +47,9 @@ def mostrar_menu():
 temp_actual = ctrl.Antecedent(np.arange(-90, 61, 1), "temp_actual")
 temp_deseada = ctrl.Antecedent(np.arange(-90, 61, 1), "temp_deseada")
 calentador = ctrl.Consequent(np.arange(0, 101, 1), "calentador")
+
+# Aseguramos que la defuzzificación se haga por el método del centroide
+calentador.defuzzify_method = "centroid"
 
 # Creación de funciones de pertenencia más suaves (gaussianas y sigmoides)
 temp_actual["super_frio"] = fuzz.gaussmf(temp_actual.universe, -90, 10)
@@ -187,11 +180,11 @@ simulacion_calentador.input["temp_deseada"] = temp_deseada_input
 # Ejecutamos la simulación
 try:
     simulacion_calentador.compute()
-    # Mostramos el resultado en color
+    # Mostramos el resultado en color utilizando el método del centroide
     print(
         Fore.MAGENTA
         + Style.BRIGHT
-        + f"\nEl porcentaje de uso del calentador es: {simulacion_calentador.output['calentador']:.2f}%"
+        + f"\nEl porcentaje de uso del calentador es (método del centroide): {simulacion_calentador.output['calentador']:.2f}%"
     )
 except Exception as e:
     print(Fore.RED + f"Ocurrió un error durante la simulación: {e}")
