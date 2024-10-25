@@ -17,28 +17,42 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 import matplotlib.pyplot as plt
+from colorama import Fore, Style, init
 
-# 1. Definición de las variables difusas con el nuevo rango de temperatura
+# Inicializamos colorama
+init(autoreset=True)
+
+# Función para mostrar un menú interactivo
+def mostrar_menu():
+    print(Fore.GREEN + Style.BRIGHT + "-"*60)
+    print(Fore.CYAN + "Sistema de Control Difuso del Calentador de Agua")
+    print(Fore.GREEN + "-"*60)
+    print(Fore.YELLOW + "Ingrese los siguientes valores:")
+    temp_actual = float(input(Fore.YELLOW + "Temperatura actual (entre -90 y 60 grados): "))
+    temp_deseada = float(input(Fore.YELLOW + "Temperatura deseada (entre -90 y 60 grados): "))
+    return temp_actual, temp_deseada
+
+# Definición de las variables difusas con el nuevo rango de temperatura
 temp_actual = ctrl.Antecedent(np.arange(-90, 61, 1), 'temp_actual')
 temp_deseada = ctrl.Antecedent(np.arange(-90, 61, 1), 'temp_deseada')
 calentador = ctrl.Consequent(np.arange(0, 101, 1), 'calentador')
 
-# 2. Creación de las funciones de pertenencia
-temp_actual['super_frio'] = fuzz.trimf(temp_actual.universe, [-90, -90, -60])
-temp_actual['muy_frio'] = fuzz.trimf(temp_actual.universe, [-70, -50, -30])
-temp_actual['frio'] = fuzz.trimf(temp_actual.universe, [-40, -20, 0])
-temp_actual['templado'] = fuzz.trimf(temp_actual.universe, [-10, 10, 30])
-temp_actual['caliente'] = fuzz.trimf(temp_actual.universe, [20, 40, 50])
-temp_actual['muy_caliente'] = fuzz.trimf(temp_actual.universe, [40, 50, 60])
-temp_actual['extremadamente_caliente'] = fuzz.trimf(temp_actual.universe, [50, 60, 60])
+# Creación de funciones de pertenencia más suaves (gaussianas y sigmoides)
+temp_actual['super_frio'] = fuzz.gaussmf(temp_actual.universe, -90, 10)
+temp_actual['muy_frio'] = fuzz.gaussmf(temp_actual.universe, -60, 10)
+temp_actual['frio'] = fuzz.gaussmf(temp_actual.universe, -20, 10)
+temp_actual['templado'] = fuzz.gaussmf(temp_actual.universe, 10, 10)
+temp_actual['caliente'] = fuzz.gaussmf(temp_actual.universe, 30, 10)
+temp_actual['muy_caliente'] = fuzz.gaussmf(temp_actual.universe, 50, 10)
+temp_actual['extremadamente_caliente'] = fuzz.gaussmf(temp_actual.universe, 60, 10)
 
-temp_deseada['super_baja'] = fuzz.trimf(temp_deseada.universe, [-90, -90, -60])
-temp_deseada['muy_baja'] = fuzz.trimf(temp_deseada.universe, [-70, -50, -30])
-temp_deseada['baja'] = fuzz.trimf(temp_deseada.universe, [-40, -20, 0])
-temp_deseada['media'] = fuzz.trimf(temp_deseada.universe, [-10, 10, 30])
-temp_deseada['alta'] = fuzz.trimf(temp_deseada.universe, [20, 40, 50])
-temp_deseada['muy_alta'] = fuzz.trimf(temp_deseada.universe, [40, 50, 60])
-temp_deseada['extremadamente_alta'] = fuzz.trimf(temp_deseada.universe, [50, 60, 60])
+temp_deseada['super_baja'] = fuzz.gaussmf(temp_deseada.universe, -90, 10)
+temp_deseada['muy_baja'] = fuzz.gaussmf(temp_deseada.universe, -60, 10)
+temp_deseada['baja'] = fuzz.gaussmf(temp_deseada.universe, -20, 10)
+temp_deseada['media'] = fuzz.gaussmf(temp_deseada.universe, 10, 10)
+temp_deseada['alta'] = fuzz.gaussmf(temp_deseada.universe, 30, 10)
+temp_deseada['muy_alta'] = fuzz.gaussmf(temp_deseada.universe, 50, 10)
+temp_deseada['extremadamente_alta'] = fuzz.gaussmf(temp_deseada.universe, 60, 10)
 
 calentador['muy_bajo'] = fuzz.trimf(calentador.universe, [0, 0, 25])
 calentador['bajo'] = fuzz.trimf(calentador.universe, [10, 30, 50])
@@ -46,8 +60,7 @@ calentador['medio'] = fuzz.trimf(calentador.universe, [40, 50, 70])
 calentador['alto'] = fuzz.trimf(calentador.universe, [60, 75, 90])
 calentador['muy_alto'] = fuzz.trimf(calentador.universe, [75, 90, 100])
 
-# 3. Definición de las reglas difusas
-
+# Definición de las reglas difusas
 regla1 = ctrl.Rule(temp_actual['super_frio'] & temp_deseada['extremadamente_alta'], calentador['muy_alto'])
 regla2 = ctrl.Rule(temp_actual['super_frio'] & temp_deseada['alta'], calentador['alto'])
 regla3 = ctrl.Rule(temp_actual['muy_frio'] & temp_deseada['media'], calentador['medio'])
@@ -59,27 +72,27 @@ regla8 = ctrl.Rule(temp_actual['extremadamente_caliente'] & temp_deseada['super_
 regla9 = ctrl.Rule(temp_actual['frio'] & temp_deseada['alta'], calentador['alto'])
 regla10 = ctrl.Rule(temp_actual['templado'] & temp_deseada['alta'], calentador['medio'])
 
-# 4. Creación del sistema de control
+# Creación del sistema de control
 sistema_calentador = ctrl.ControlSystem([regla1, regla2, regla3, regla4, regla5, regla6, regla7, regla8, regla9, regla10])
 simulacion_calentador = ctrl.ControlSystemSimulation(sistema_calentador)
 
-# 5. Simulación del sistema de control
-simulacion_calentador.input['temp_actual'] = -5
-simulacion_calentador.input['temp_deseada'] = 30
+# Menú interactivo para ingresar las temperaturas
+temp_actual_input, temp_deseada_input = mostrar_menu()
+
+# Simulación del sistema de control
+simulacion_calentador.input['temp_actual'] = temp_actual_input
+simulacion_calentador.input['temp_deseada'] = temp_deseada_input
 
 # Ejecutamos la simulación
 try:
     simulacion_calentador.compute()
+    # Mostramos el resultado en color
+    print(Fore.MAGENTA + Style.BRIGHT + f"\nEl porcentaje de uso del calentador es: {simulacion_calentador.output['calentador']:.2f}%")
 except Exception as e:
-    print(f"Ocurrió un error durante la simulación: {e}")
+    print(Fore.RED + f"Ocurrió un error durante la simulación: {e}")
 
-# 6. Verificación y resultados
-if 'calentador' in simulacion_calentador.output:
-    print(f"El porcentaje de uso del calentador debe ser: {simulacion_calentador.output['calentador']:.2f}%")
-    temp_actual.view()
-    temp_deseada.view()
-    calentador.view(simulacion_calentador)
-    # Mostramos las gráficas
-    plt.show()
-else:
-    print("Error: No se pudo calcular la salida 'calentador'. Revisa las entradas y las reglas.")
+# Mostramos las gráficas
+temp_actual.view()
+temp_deseada.view()
+calentador.view(simulacion_calentador)
+plt.show()
