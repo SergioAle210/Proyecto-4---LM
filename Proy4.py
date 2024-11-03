@@ -185,19 +185,19 @@ simulacion_calentador.input["temp_deseada"] = temp_deseada_input
 try:
     simulacion_calentador.compute()
 
-    simulacion_calentador.print_state()
-
     # Mostramos el resultado en color utilizando el método del centroide
     print(
         Fore.MAGENTA
         + Style.BRIGHT
         + f"\nEl porcentaje de uso del calentador es (método del centroide): {simulacion_calentador.output['calentador']:.2f}%"
     )
+
+    simulacion_calentador.print_state()
 except Exception as e:
     print(Fore.RED + f"Ocurrió un error durante la simulación: {e}")
 
 # Mostramos las gráficas
-temp_actual.view()
-temp_deseada.view()
+temp_actual.view(simulacion_calentador)
+temp_deseada.view(simulacion_calentador)
 calentador.view(simulacion_calentador)
 plt.show()
