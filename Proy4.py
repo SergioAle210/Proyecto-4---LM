@@ -30,6 +30,13 @@ def mostrar_menu():
                 input(Fore.YELLOW + "Temperatura deseada (entre -90 y 60 grados): ")
             )
 
+            if temp_deseada < temp_actual:
+                print(
+                    Fore.RED
+                    + "Error: La temperatura deseada debe ser mayor o igual a la actual."
+                )
+                continue
+
             # Verificación de que las temperaturas estén dentro del rango
             if -90 <= temp_actual <= 60 and -90 <= temp_deseada <= 60:
                 break
@@ -200,6 +207,8 @@ try:
         + Style.BRIGHT
         + f"\nEl porcentaje de uso del calentador es (método del centroide): {simulacion_calentador.output['calentador']:.2f}%"
     )
+
+    simulacion_calentador.print_state()
 except Exception as e:
     print(Fore.RED + f"Ocurrió un error durante la simulación: {e}")
 
