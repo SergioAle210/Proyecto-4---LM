@@ -9,7 +9,7 @@ from skfuzzy import control as ctrl
 import matplotlib.pyplot as plt
 from colorama import Fore, Style, init
 
-# Inicializamos colorama
+# Inicializamos colorama para poder usar colores en la terminal
 init(autoreset=True)
 
 
@@ -43,15 +43,18 @@ def mostrar_menu():
     return temp_actual, temp_deseada
 
 
-# Definición de las variables difusas con el nuevo rango de temperatura
+# Definimos las variables difusas para la temperatura actual y deseada.
+# Usamos el rango [-90, 60] ya que es el rango registrado de temperaturas más bajas y más altas en el mundo.
 temp_actual = ctrl.Antecedent(np.arange(-90, 61, 1), "temp_actual")
 temp_deseada = ctrl.Antecedent(np.arange(-90, 61, 1), "temp_deseada")
 calentador = ctrl.Consequent(np.arange(0, 101, 1), "calentador")
 
-# Aseguramos que la defuzzificación se haga por el método del centroide
+# Aseguramos que la defuzzificación se haga por el método del centroide,
+# que es el método más común para obtener un valor final difuso en control difuso.
 calentador.defuzzify_method = "centroid"
 
-# Creación de funciones de pertenencia más suaves (gaussianas y sigmoides)
+# Creación de funciones de pertenencia suaves para cada nivel de temperatura.
+# Estas funciones gaussianas representan de forma más gradual los cambios entre niveles de temperatura.
 temp_actual["super_frio"] = fuzz.gaussmf(temp_actual.universe, -90, 10)
 temp_actual["muy_frio"] = fuzz.gaussmf(temp_actual.universe, -60, 10)
 temp_actual["frio"] = fuzz.gaussmf(temp_actual.universe, -20, 10)
@@ -60,6 +63,7 @@ temp_actual["caliente"] = fuzz.gaussmf(temp_actual.universe, 30, 10)
 temp_actual["muy_caliente"] = fuzz.gaussmf(temp_actual.universe, 50, 10)
 temp_actual["extremadamente_caliente"] = fuzz.gaussmf(temp_actual.universe, 60, 10)
 
+# Las funciones de pertenencia para la temperatura deseada son similares.
 temp_deseada["super_baja"] = fuzz.gaussmf(temp_deseada.universe, -90, 10)
 temp_deseada["muy_baja"] = fuzz.gaussmf(temp_deseada.universe, -60, 10)
 temp_deseada["baja"] = fuzz.gaussmf(temp_deseada.universe, -20, 10)
@@ -68,11 +72,20 @@ temp_deseada["alta"] = fuzz.gaussmf(temp_deseada.universe, 30, 10)
 temp_deseada["muy_alta"] = fuzz.gaussmf(temp_deseada.universe, 50, 10)
 temp_deseada["extremadamente_alta"] = fuzz.gaussmf(temp_deseada.universe, 60, 10)
 
+# Definimos funciones de pertenencia para el calentador.
+# Estas funciones indican el porcentaje de uso del calentador.
 calentador["muy_bajo"] = fuzz.trimf(calentador.universe, [0, 0, 25])
 calentador["bajo"] = fuzz.trimf(calentador.universe, [10, 30, 50])
 calentador["medio"] = fuzz.trimf(calentador.universe, [40, 50, 70])
 calentador["alto"] = fuzz.trimf(calentador.universe, [60, 75, 90])
 calentador["muy_alto"] = fuzz.trimf(calentador.universe, [75, 90, 100])
+
+# Definición de las reglas difusas.
+# Cada regla indica cómo deben interactuar las temperaturas actual y deseada
+# para determinar el porcentaje de uso del calentador.
+# A continuación se definen 23 reglas.
+# Cada regla combina un nivel de temperatura actual con uno de temperatura deseada
+# y asigna un nivel de uso del calentador.
 
 # Definición de las reglas difusas
 # Super Frío
@@ -139,7 +152,7 @@ regla23 = ctrl.Rule(
     calentador["muy_bajo"],
 )
 
-# Agregar las reglas al sistema de control
+# Creamos el sistema de control difuso y lo configuramos con todas las reglas definidas.
 sistema_calentador = ctrl.ControlSystem(
     [
         regla1,
@@ -168,19 +181,20 @@ sistema_calentador = ctrl.ControlSystem(
     ]
 )
 
+# Creamos la simulación del sistema de control difuso
 simulacion_calentador = ctrl.ControlSystemSimulation(sistema_calentador)
 
-# Menú interactivo para ingresar las temperaturas
+# Mostramos el menú para que el usuario ingrese las temperaturas deseadas.
 temp_actual_input, temp_deseada_input = mostrar_menu()
 
-# Simulación del sistema de control
+# Asignamos las entradas a la simulación.
 simulacion_calentador.input["temp_actual"] = temp_actual_input
 simulacion_calentador.input["temp_deseada"] = temp_deseada_input
 
-# Ejecutamos la simulación
+# Ejecutamos la simulación y mostramos el resultado utilizando el método de defuzzificación por centroide.
 try:
     simulacion_calentador.compute()
-    # Mostramos el resultado en color utilizando el método del centroide
+    # Imprimimos el porcentaje de uso del calentador calculado.
     print(
         Fore.MAGENTA
         + Style.BRIGHT
@@ -189,7 +203,7 @@ try:
 except Exception as e:
     print(Fore.RED + f"Ocurrió un error durante la simulación: {e}")
 
-# Mostramos las gráficas
+# Mostramos las gráficas de las funciones de pertenencia de temperatura actual, deseada y el resultado del calentador.
 temp_actual.view()
 temp_deseada.view()
 calentador.view(simulacion_calentador)
